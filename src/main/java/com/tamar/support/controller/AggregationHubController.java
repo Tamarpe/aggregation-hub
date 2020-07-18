@@ -26,11 +26,11 @@ public class AggregationHubController {
 	/**
 	 * MyAggregatedHub homepage.
 	 *
+	 * @param model the model name to display.
 	 * @return template's model
 	 */
 	@GetMapping("/myAggregatedHub")
 	public String getCases(Model model) {
-
 		return "myAggregatedHub";
 	}
 
@@ -63,11 +63,10 @@ public class AggregationHubController {
 		SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 		Map<Object, Object> allCasesFromRedis = redisRepository.findAllCases();
 		ArrayList<Map<String, Object>> result = new ArrayList<>();
-		DateFormat dateFormat = new SimpleDateFormat("dd/MM/YYYY");
+		DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
 		for (Map.Entry<Object, Object> entry : allCasesFromRedis.entrySet()) {
 			Map<String, Object> map = new HashMap<String, Object>();
 			Case caseObj = (Case) entry.getValue();
-
 
 			if (product != null && !product.equals("") && !caseObj.getProductName().toLowerCase().contains(product.toLowerCase())) {
 				continue;
@@ -174,6 +173,7 @@ public class AggregationHubController {
 	/**
 	 * Helper function to valid if a string is parsable.
 	 *
+	 * @param input the given input from the user.
 	 * @return true if is parsable, false otherwise.
 	 */
 	public static boolean isParsable(String input) {

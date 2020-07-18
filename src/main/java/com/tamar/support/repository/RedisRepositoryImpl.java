@@ -15,7 +15,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
-import org.xml.sax.EntityResolver;
 
 import javax.annotation.PostConstruct;
 
@@ -99,27 +98,28 @@ public class RedisRepositoryImpl implements RedisRepository {
 
     /**
      * Refresh the fetched data.
+     *
+     * @return true if a refresh is allowed, false otherwise.
      */
     @Scheduled(cron = "${aggregations.auto.refresh}")
-    public void refresh() {
+    public boolean refresh() {
         Date currentDate = new Date();
+        Date lastExecutionCrm1 = getLastExecutionResource(aggregationsCrm1Resource);
+        Date lastExecutionCrm2 = getLastExecutionResource(aggregationsCrm2Resource);
 
-        if (hashOperations.hasKey("last_execution", aggregationsCrm1Resource)
-          && hashOperations.hasKey("last_execution", aggregationsCrm2Resource)) {
-            Date lastExecutionCrm1 = (Date) hashOperations.get("last_execution", aggregationsCrm1Resource);
-            Date lastExecutionCrm2 = (Date) hashOperations.get("last_execution", aggregationsCrm2Resource);
-
+        if (lastExecutionCrm1 != null && lastExecutionCrm2 != null) {
             // If the data from the 2 CRMs are fetched less than the
             // aggregation refresh period time, we do nothing.
             if ((currentDate.getTime() - lastExecutionCrm1.getTime() < aggregationsRefreshPeriodTime)
               && (currentDate.getTime() - lastExecutionCrm2.getTime() < aggregationsRefreshPeriodTime)) {
                 logger.warn("The data is already fetched less than the time limit.");
-                return;
+                return false;
             }
         }
 
         refreshCrm(aggregationsCrm1Url, true, aggregationsCrm1Resource, aggregationsCrm1RateLimit, aggregationsCrm1PeriodTime);
         refreshCrm(aggregationsCrm2Url, false, aggregationsCrm2Resource, aggregationsCrm2RateLimit, aggregationsCrm2PeriodTime);
+        return true;
     }
 
     /**
@@ -180,13 +180,13 @@ public class RedisRepositoryImpl implements RedisRepository {
 
                     } catch (ParseException e) {
                         e.printStackTrace();
-                        logger.error("Error found on parsing the date format: {}", e);
+                        logger.error("Error found on parsing the date format", e);
                     }
                 }
                 hashOperations.put("last_execution", resource, currentDate);
             } catch (HttpStatusCodeException e) {
                     e.printStackTrace();
-                    logger.error("Error found on calling to the API: {}", e);
+                    logger.error("Error found on calling to the API", e);
             }
         }
     }
@@ -215,6 +215,19 @@ public class RedisRepositoryImpl implements RedisRepository {
      */
     public Map<Object, Object> findAllCases() {
         return hashOperations.entries(KEY);
+    }
+
+    /**
+     * Return last execution of fetching a resource.
+     *
+     * @param aggregationsCrmResource the resource.
+     * @return the date of the last execution.
+     */
+    public Date getLastExecutionResource(String aggregationsCrmResource) {
+        if (hashOperations.hasKey("last_execution", aggregationsCrmResource)) {
+            return (Date) hashOperations.get("last_execution", aggregationsCrmResource);
+        }
+        return null;
     }
 
 }
