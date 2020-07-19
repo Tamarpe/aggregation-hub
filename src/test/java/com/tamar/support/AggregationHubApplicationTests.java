@@ -2,19 +2,20 @@ package com.tamar.support;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.when;
 
+import com.tamar.support.config.CrmConfig;
 import com.tamar.support.controller.AggregationHubController;
 import com.tamar.support.model.Case;
 
+import com.tamar.support.model.Crm;
 import com.tamar.support.repository.RedisRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
@@ -43,13 +44,9 @@ class AggregationHubApplicationTests {
 	@LocalServerPort
 	private int port;
 
-	/** The URL for the aggregation of the CRM 1. */
-	@Value("${aggregations.crm1.url}")
-	private String aggregationsCrm1Url;
-
-	/** The URL for the aggregation of the CRM 2. */
-	@Value("${aggregations.crm2.url}")
-	private String aggregationsCrm2Url;
+	/** The CRM configuration. */
+	@Autowired
+	CrmConfig crmConfig;
 
 	@Test
 	void contextLoads() {
@@ -144,23 +141,24 @@ class AggregationHubApplicationTests {
 
 	@Test
 	public void getOkResponseFromResources() {
-		String[] resourcesUrls = {aggregationsCrm1Url, aggregationsCrm2Url};
-		for (String resourcesUrl: resourcesUrls) {
-			ResponseEntity<List<Object>> res = restTemplate.exchange(
-				aggregationsCrm1Url,
-				HttpMethod.GET,
-				null,
-				new ParameterizedTypeReference<>() {
-				});
+		List<Crm> crmList = crmConfig.getList();
 
-			assertEquals(HttpStatus.OK,
-				res.getStatusCode());
+		for (Crm crmObj: crmList) {
+				ResponseEntity<List<Object>> res = restTemplate.exchange(
+					crmObj.getUrl(),
+					HttpMethod.GET,
+					null,
+					new ParameterizedTypeReference<>() {
+					});
+
+				assertEquals(HttpStatus.OK,
+					res.getStatusCode());
 		}
 	}
 
 	@Test
 	public void refreshTimeLimit() {
-		when(RedisRepository.getLastExecutionResource(anyString())).thenReturn(new Date());
+		when(RedisRepository.getLastExecutionResource(anyInt())).thenReturn(new Date());
 		assertEquals(false, RedisRepository.refresh());
 	}
 

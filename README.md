@@ -1,7 +1,6 @@
 # Support Aggregation Hub
 
-The project is designed to aggregate data from two different CRM systems, and provides a support aggregation system.
-
+The goal of the project is to aggregate data from different CRMs systems, and provides a support aggregation platform.
 
 ## Features
 - Web-based user interface
@@ -9,10 +8,10 @@ The project is designed to aggregate data from two different CRM systems, and pr
   
 - On-demand data aggregation
   - A refresh button to fetch the data on-demand
-  - Throttling - we can define a time limit between the last refresh to avoid overload. 
+  - Throttling - we can define a time limit between the last refresh to avoid overload
   
 - Offline data aggregation
-  - Using cron, the data would be fetched every defined time period.
+  - Using cron, the data would be fetched every defined time period
   - The data is saved to Redis (in-memory cache), so when a user login, he would see the most updated data without waiting online / on demand aggregation to complete
 
 - Persistent storage
@@ -20,8 +19,8 @@ The project is designed to aggregate data from two different CRM systems, and pr
 
 - Highly configurable
   - CRM URLs to fetch the data from
-  - Throttling - each API to a CRM can have a limitation of current sessions in the same time, and a time limit between two aggregations.
-  - CRON - the crontab role is configurable and can update the data in any defined time period.
+  - Throttling - each API to a CRM can have a limitation of current sessions in the same time, and a time limit between two aggregations
+  - Cron - the crontab role is configurable and can update the data in any defined time period
 
 
 ## Getting started
@@ -42,7 +41,7 @@ Using browser, navigate to:
 http://localhost:8080/myAggregatedHub
 ```
 
-Run the tests:
+To run tests only:
 
 ```
 mvn test
@@ -51,3 +50,5 @@ mvn test
 
 
 ## Screenshot
+
+![image](https://user-images.githubusercontent.com/7335049/87868995-10134180-c99c-11ea-9156-86cba03420bb.png)

@@ -1,7 +1,9 @@
 package com.tamar.support.repository;
 
 import com.google.common.util.concurrent.RateLimiter;
+import com.tamar.support.config.CrmConfig;
 import com.tamar.support.model.Case;
+import com.tamar.support.model.Crm;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,210 +26,193 @@ import java.util.*;
 
 @Repository
 public class RedisRepositoryImpl implements RedisRepository {
-    /** The key to be used in Redis for a case. */
-    private static final String KEY = "case";
+  /**
+   * The key to be used in Redis for a case.
+   */
+  private static final String KEY = "case";
 
-    /** The Redis template. */
-    private RedisTemplate<String, Object> redisTemplate;
+  /**
+   * The Redis template.
+   */
+  private RedisTemplate<String, Object> redisTemplate;
 
-    /** The Hash operations. */
-    private HashOperations hashOperations;
+  /**
+   * The Hash operations.
+   */
+  private HashOperations hashOperations;
 
-    /** The logger. */
-    private Logger logger;
+  /**
+   * The logger.
+   */
+  private Logger logger;
 
-    /** The URL for the aggregation of the CRM 1. */
-    @Value("${aggregations.crm1.url}")
-    private String aggregationsCrm1Url;
+  /**
+   * The CRM configuration.
+   */
+  @Autowired
+  private CrmConfig crmConfig;
 
-    /** The URL for the aggregation of the CRM 2. */
-    @Value("${aggregations.crm2.url}")
-    private String aggregationsCrm2Url;
+  /**
+   * The period time that should passed to be able to refresh.
+   */
+  @Value("${aggregations.refresh.ratelimit}")
+  private Integer aggregationsRefreshPeriodTime;
 
-    /** The resource name of the CRM 1. */
-    @Value("${aggregations.crm1.resourcename}")
-    private String aggregationsCrm1Resource;
+  /**
+   * Create a new RedisRepositoryImpl.
+   *
+   * @param redisTemplate the redis template.
+   */
+  @Autowired
+  public RedisRepositoryImpl(RedisTemplate<String, Object> redisTemplate) {
+    this.redisTemplate = redisTemplate;
+  }
 
-    /** The resource name of the CRM 2. */
-    @Value("${aggregations.crm2.resourcename}")
-    private String aggregationsCrm2Resource;
+  @PostConstruct
+  private void init() {
+    hashOperations = redisTemplate.opsForHash();
+    logger = LoggerFactory.getLogger(RedisRepositoryImpl.class);
+  }
 
-    /** The rate limit for the CRM 1. */
-    @Value("${aggregations.crm1.ratelimit}")
-    private Integer aggregationsCrm1RateLimit;
+  /**
+   * Refresh the fetched data.
+   *
+   * @return true if a refresh is allowed, false otherwise.
+   */
+  @Scheduled(cron = "${aggregations.auto.refresh}")
+  public boolean refresh() {
+    Date currentDate = new Date();
+    List<Crm> crmList = crmConfig.getList();
 
-    /** The rate limit for the CRM 2. */
-    @Value("${aggregations.crm2.ratelimit}")
-    private Integer aggregationsCrm2RateLimit;
-
-    /**
-     * The period time that should passed to be able to execute
-     * another call to the CRM 1.
-     */
-    @Value("${aggregations.crm1.periodtime}")
-    private Integer aggregationsCrm1PeriodTime;
-
-    /**
-     * The period time that should passed to be able to execute
-     * another call to the CRM 2.
-     */
-    @Value("${aggregations.crm2.periodtime}")
-    private Integer aggregationsCrm2PeriodTime;
-
-    /**
-     * The period time that should passed to be able to refresh.
-     */
-    @Value("${aggregations.refresh.ratelimit}")
-    private Integer aggregationsRefreshPeriodTime;
-
-    /**
-     * Create a new RedisRepositoryImpl.
-     *
-     * @param redisTemplate the redis template.
-     */
-    @Autowired
-    public RedisRepositoryImpl(RedisTemplate<String, Object> redisTemplate) {
-        this.redisTemplate = redisTemplate;
+    for (int i = 0; i < crmList.size(); i++) {
+      Date lastExecutionCrm = getLastExecutionResource(i);
+      if (lastExecutionCrm != null && currentDate.getTime() - lastExecutionCrm.getTime() < aggregationsRefreshPeriodTime) {
+        logger.warn("The data is already fetched less than the time limit.");
+        return false;
+      }
     }
 
-    @PostConstruct
-    private void init() {
-        hashOperations = redisTemplate.opsForHash();
-        logger = LoggerFactory.getLogger(RedisRepositoryImpl.class);
+    for (int i = 0; i < crmList.size(); i++) {
+      refreshCrm(i, crmList.get(i).getUrl(), crmList.get(i).getName(), crmList.get(i).getRateLimit(), crmList.get(i).getPeriodTime());
     }
+    return true;
+  }
 
-    /**
-     * Refresh the fetched data.
-     *
-     * @return true if a refresh is allowed, false otherwise.
-     */
-    @Scheduled(cron = "${aggregations.auto.refresh}")
-    public boolean refresh() {
-        Date currentDate = new Date();
-        Date lastExecutionCrm1 = getLastExecutionResource(aggregationsCrm1Resource);
-        Date lastExecutionCrm2 = getLastExecutionResource(aggregationsCrm2Resource);
+  /**
+   * Refresh the data from a CRM.
+   *
+   * @param crmId      the CRM ID.
+   * @param crmUrl     the URL of the CRM.
+   * @param crmName    the CRM name.
+   * @param rateLimit  the allowed number to execute an API call to the CRM.
+   * @param periodTime The period time that should passed to be able to
+   *                   execute a call to the CRM.
+   */
+  public void refreshCrm(int crmId, String crmUrl, String crmName, Integer rateLimit, Integer periodTime) {
+    Date currentDate = new Date();
+    RestTemplate restTemplate = new RestTemplate();
+    RateLimiter rateLimiter = RateLimiter.create(rateLimit);
 
-        if (lastExecutionCrm1 != null && lastExecutionCrm2 != null) {
-            // If the data from the 2 CRMs are fetched less than the
-            // aggregation refresh period time, we do nothing.
-            if ((currentDate.getTime() - lastExecutionCrm1.getTime() < aggregationsRefreshPeriodTime)
-              && (currentDate.getTime() - lastExecutionCrm2.getTime() < aggregationsRefreshPeriodTime)) {
-                logger.warn("The data is already fetched less than the time limit.");
-                return false;
+    if (hashOperations.hasKey("last_execution", crmId)) {
+      Date lastExecutionCrm = (Date) hashOperations.get("last_execution", crmId);
+      if (currentDate.getTime() - lastExecutionCrm.getTime() < periodTime) {
+        logger.warn("The data is already fetched less than the time limit.");
+        return;
+      }
+    }
+    if (rateLimiter.tryAcquire()) {
+      try {
+        logger.info("Fetching data from CRM: " + crmName);
+        ResponseEntity<List<Object>> res = restTemplate.exchange(
+          crmUrl,
+          HttpMethod.GET,
+          null,
+          new ParameterizedTypeReference<>() {
+          });
+        List<Object> result = res.getBody();
+
+        for (int i = 0; i < result.size(); i++) {
+          if (result.get(i) instanceof ArrayList<?>) {
+            ArrayList<LinkedHashMap> fetchedCases = (ArrayList) result.get(i);
+            for (LinkedHashMap fetchedCase : fetchedCases) {
+              mapAndAdd(crmId, crmName, fetchedCase);
             }
-        }
-
-        refreshCrm(aggregationsCrm1Url, true, aggregationsCrm1Resource, aggregationsCrm1RateLimit, aggregationsCrm1PeriodTime);
-        refreshCrm(aggregationsCrm2Url, false, aggregationsCrm2Resource, aggregationsCrm2RateLimit, aggregationsCrm2PeriodTime);
-        return true;
-    }
-
-    /**
-     * Refresh the data from a CRM.
-     *
-     * @param crmUrl the URL of the CRM.
-     * @param getFirstElement a boolean value if the data is in a nested array.
-     * @param resource the CRM resource.
-     * @param rateLimit the allowed number to execute an API call to the CRM.
-     * @param periodTime The period time that should passed to be able to
-     *   execute a call to the CRM.
-     */
-    public void refreshCrm(String crmUrl, boolean getFirstElement, String resource, Integer rateLimit, Integer periodTime) {
-        Date currentDate = new Date();
-        RestTemplate restTemplate = new RestTemplate();
-        RateLimiter rateLimiter = RateLimiter.create(rateLimit);
-
-        if (hashOperations.hasKey("last_execution", resource)) {
-            Date lastExecutionCrm = (Date) hashOperations.get("last_execution", resource);
-            if (currentDate.getTime() - lastExecutionCrm.getTime() < periodTime) {
-                logger.warn("The data is already fetched less than the time limit.");
-                return;
+          } else {
+            ArrayList<LinkedHashMap> fetchedCases = (ArrayList) result;
+            for (LinkedHashMap fetchedCase : fetchedCases) {
+              mapAndAdd(crmId, crmName, fetchedCase);
             }
+          }
         }
-        if (rateLimiter.tryAcquire()) {
-            try {
-                logger.info("Fetching data from CRM: " + resource);
-                ResponseEntity<List<Object>> res = restTemplate.exchange(
-                    crmUrl,
-                    HttpMethod.GET,
-                    null,
-                    new ParameterizedTypeReference<>() {
-                    });
 
-                List<Object> result = res.getBody();
-                ArrayList<LinkedHashMap> fetchedCases =
-                  getFirstElement ? (ArrayList) result.get(0) : (ArrayList) result;
-
-                for (LinkedHashMap fetchedCase : fetchedCases) {
-                    String id = fetchedCase.get("CaseID") + ";resource:" + resource;
-                    SimpleDateFormat fromApi = new SimpleDateFormat("M/d/yyyyh:mm");
-
-                    try {
-                        Date creationDate = fromApi.parse((String) fetchedCase.get("TICKET_CREATION_DATE"));
-                        Date lastModifiedDate = fromApi.parse((String) fetchedCase.get("LAST_MODIFIED_DATE"));
-                        Case caseTmp = new Case(id,
-                          (Integer) fetchedCase.get("CaseID"),
-                          (Integer) fetchedCase.get("CustomerID"),
-                          (Integer) fetchedCase.get("Provider"),
-                          (Integer) fetchedCase.get("CREATED_ERROR_CODE"),
-                          (String) fetchedCase.get("STATUS"),
-                          creationDate,
-                          lastModifiedDate,
-                          (String) fetchedCase.get("PRODUCT_NAME"),
-                          resource);
-
-                        add(caseTmp);
-
-                    } catch (ParseException e) {
-                        e.printStackTrace();
-                        logger.error("Error found on parsing the date format", e);
-                    }
-                }
-                hashOperations.put("last_execution", resource, currentDate);
-            } catch (HttpStatusCodeException e) {
-                    e.printStackTrace();
-                    logger.error("Error found on calling to the API", e);
-            }
-        }
+        hashOperations.put("last_execution", crmId, currentDate);
+      } catch (HttpStatusCodeException e) {
+        e.printStackTrace();
+        logger.error("Error found on calling to the API", e);
+      }
     }
+  }
 
-    /**
-     * Add a case to Redis.
-     *
-     * @param caseToAdd the case that should be added.
-     */
-    public void add(Case caseToAdd) {
-        hashOperations.put(KEY, caseToAdd.getId(), caseToAdd);
-    }
+  /**
+   * Mao and add a case to Redis.
+   *
+   * @param crmId     the CRM ID.
+   * @param crmName   the CRM Name.
+   * @param caseToAdd the case that should be mapped and added.
+   */
+  public void mapAndAdd(int crmId, String crmName, LinkedHashMap caseToAdd) {
+    String id = caseToAdd.get("CaseID") + ";resource:" + crmId;
+    SimpleDateFormat fromApi = new SimpleDateFormat("M/d/yyyyh:mm");
 
-    /**
-     * Delete all the data from Redis.
-     */
-    public void delete() {
-        redisTemplate.delete(KEY);
-        redisTemplate.delete("last_execution");
-    }
+    try {
+      Date creationDate = fromApi.parse((String) caseToAdd.get("TICKET_CREATION_DATE"));
+      Date lastModifiedDate = fromApi.parse((String) caseToAdd.get("LAST_MODIFIED_DATE"));
+      Case caseObj = new Case(id,
+        (Integer) caseToAdd.get("CaseID"),
+        (Integer) caseToAdd.get("CustomerID"),
+        (Integer) caseToAdd.get("Provider"),
+        (Integer) caseToAdd.get("CREATED_ERROR_CODE"),
+        (String) caseToAdd.get("STATUS"),
+        creationDate,
+        lastModifiedDate,
+        (String) caseToAdd.get("PRODUCT_NAME"),
+        crmName);
 
-    /**
-     * Return all found cases.
-     *
-     * @return all the cases from Redis.
-     */
-    public Map<Object, Object> findAllCases() {
-        return hashOperations.entries(KEY);
+      hashOperations.put(KEY, caseObj.getId(), caseObj);
+    } catch (ParseException e) {
+      e.printStackTrace();
+      logger.error("Error found on parsing the date format", e);
     }
+  }
 
-    /**
-     * Return last execution of fetching a resource.
-     *
-     * @param aggregationsCrmResource the resource.
-     * @return the date of the last execution.
-     */
-    public Date getLastExecutionResource(String aggregationsCrmResource) {
-        if (hashOperations.hasKey("last_execution", aggregationsCrmResource)) {
-            return (Date) hashOperations.get("last_execution", aggregationsCrmResource);
-        }
-        return null;
+  /**
+   * Delete all the data from Redis.
+   */
+  public void delete() {
+    redisTemplate.delete(KEY);
+    redisTemplate.delete("last_execution");
+  }
+
+  /**
+   * Return all found cases.
+   *
+   * @return all the cases from Redis.
+   */
+  public Map<Object, Object> findAllCases() {
+    return hashOperations.entries(KEY);
+  }
+
+  /**
+   * Return last execution of fetching data from a CRM.
+   *
+   * @param crmId the crm ID.
+   * @return the date of the last execution.
+   */
+  public Date getLastExecutionResource(int crmId) {
+    if (hashOperations.hasKey("last_execution", crmId)) {
+      return (Date) hashOperations.get("last_execution", crmId);
     }
+    return null;
+  }
 
 }
