@@ -29,4 +29,5 @@ public class CrmConfig {
   public void setList(List<Crm> list) {
     this.list = list;
   }
+
 }

@@ -38,20 +38,20 @@ function row(rowId, errorCode, provider, products, supportOpenCasesCnt, supportC
             td(products) +
             td(supportOpenCasesCnt) +
             td(supportCases)
-    ));
+        ));
 }
 
 /**
- * Clear and load the data in a table.
+ * Refresh the table data.
  */
 function refreshTable() {
     let params = $('#searchCases').serialize();
     let url = '/search?' + params;
 
-    $.get(url, function(data) {
+    $.get(url, function (data) {
         let mainTable = $('#allCases tbody');
         mainTable.empty();
-        data.sort((a,b) => (a.errorCode) - (b.errorCode));
+        data.sort((a, b) => (a.errorCode) - (b.errorCode));
         let groups = groupByKeys(data, function (item) {
             return [item.provider, item.errorCode];
         });
@@ -94,41 +94,41 @@ function groupByKeys(data, f) {
     })
 }
 
-$(document).ready(function() {
+$(document).ready(function () {
     refreshTable();
     $('#searchCases').validate({
         rules: {
-            errorCode: { number: true },
-            provider: { number: true },
-            customerId: { number: true },
+            errorCode: {number: true},
+            provider: {number: true},
+            customerId: {number: true},
         },
         messages: {
-            errorCode: { number: "The error code should contain numbers only"},
-            provider: { number: "The provider should contain numbers only"},
-            customerId: { number: "The customer ID should contain numbers only"}
+            errorCode: {number: "The error code should contain numbers only"},
+            provider: {number: "The provider should contain numbers only"},
+            customerId: {number: "The customer ID should contain numbers only"}
         },
-        submitHandler: function(form) {
+        submitHandler: function (form) {
             refreshTable();
         }
     });
 
-    $('#refresh').click(function() {
+    $('#refresh').click(function () {
         // An API call to refresh the data.
-        $.get('/refresh', function() {
+        $.get('/refresh', function () {
             refreshTable();
         });
     });
 
-    $('#delete').click(function() {
+    $('#delete').click(function () {
         // An API call to delete the data.
-        $.get('/delete', function() {
+        $.get('/delete', function () {
             refreshTable();
         });
     });
 
     // Clear all the values in the filters.
-    $('#clear').click(function() {
-        $("#searchCases input").each(function() {
+    $('#clear').click(function () {
+        $("#searchCases input").each(function () {
             this.value = '';
         })
         $('#status').val('');

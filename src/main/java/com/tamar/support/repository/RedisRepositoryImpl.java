@@ -154,7 +154,7 @@ public class RedisRepositoryImpl implements RedisRepository {
   }
 
   /**
-   * Mao and add a case to Redis.
+   * Map and add a case to Redis.
    *
    * @param crmId     the CRM ID.
    * @param crmName   the CRM Name.

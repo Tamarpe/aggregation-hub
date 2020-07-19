@@ -1,7 +1,5 @@
 package com.tamar.support.controller;
 
-import com.tamar.support.model.Case;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +7,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import com.tamar.support.repository.RedisRepository;
+import com.tamar.support.model.Case;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -65,6 +64,9 @@ public class AggregationHubController {
     @RequestParam("status") String status) {
     SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd");
     Map<Object, Object> allCasesFromRedis = redisRepository.findAllCases();
+    if (allCasesFromRedis.isEmpty()) {
+      redisRepository.refresh();
+    }
     ArrayList<Map<String, Object>> result = new ArrayList<>();
     DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
     for (Map.Entry<Object, Object> entry : allCasesFromRedis.entrySet()) {
@@ -163,7 +165,7 @@ public class AggregationHubController {
   }
 
   /**
-   * The API call delete all cases.
+   * The API call to delete all cases.
    *
    * @return the response entity status.
    */
@@ -187,4 +189,5 @@ public class AggregationHubController {
       return false;
     }
   }
+
 }

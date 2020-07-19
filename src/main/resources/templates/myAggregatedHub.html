@@ -1,110 +1,110 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-    <head>
-        <title>My aggregated hub</title>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
-        <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
-        <script th:src="@{/webjars/popper.js/umd/popper.min.js}"></script>
-        <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
-        <script th:src="@{/webjars/jquery-validation/jquery.validate.js}"></script>
-        <script src="main.js"></script>
-    </head>
+<head>
+    <title>My aggregated hub</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
+    <script th:src="@{/webjars/popper.js/umd/popper.min.js}"></script>
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
+    <script th:src="@{/webjars/jquery-validation/jquery.validate.js}"></script>
+    <script src="main.js"></script>
+</head>
 
-    <body>
-         <div class="jumbotron jumbotron-fluid">
-            <div class="container">
-                <h1>My aggregated hub</h1>
-            </div>
-        </div>
+<body>
+<div class="jumbotron jumbotron-fluid">
+    <div class="container">
+        <h1>My aggregated hub</h1>
+    </div>
+</div>
 
-        <div class="container">
-            <div class="pb-5">
-                <form id="searchCases" name="searchCases" method="get">
+<div class="container">
+    <div class="pb-5">
+        <form id="searchCases" name="searchCases" method="get">
 
-                    <div class="form-row">
-                        <div class="col form-group">
-                            <label for="product">Product:</label>
-                            <input type="text" class="form-control" id="product" name="product">
-                        </div>
-
-                        <div class="col form-group">
-                            <label for="provider">Provider:</label>
-                            <input type="text" class="form-control" id="provider" name="provider">
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="col form-group">
-                            <label for="errorCode">Error code:</label>
-                            <input type="text" class="form-control" id="errorCode" name="errorCode">
-                        </div>
-
-                        <div class="col form-group">
-                            <label for="customerId">Customer ID:</label>
-                            <input type="text" class="form-control" id="customerId" name="customerId">
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="col form-group">
-                            <label for="fromCreationDate">Creation date from</label>
-                            <input class="form-control" type="date" id="fromCreationDate" name="fromCreationDate">
-                        </div>
-                        <div class="col form-group">
-                            <label for="untilCreationDate">Until</label>
-                            <input class="form-control" type="date"  id="untilCreationDate" name="untilCreationDate">
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="col form-group">
-                            <label for="fromLastModifiedDate">Last modified date from</label>
-                            <input class="form-control" type="date" id="fromLastModifiedDate" name="fromLastModifiedDate">
-                        </div>
-                        <div class="col form-group">
-                            <label for="untilLastModifiedDate">Until</label>
-                            <input class="form-control" type="date"  id="untilLastModifiedDate" name="untilLastModifiedDate">
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="col form-group">
-                            <label for="status">Status</label>
-                            <select id="status" class="form-control" name="status">
-                                <option value ="" selected>Choose...</option>
-                                <option>Open</option>
-                                <option>Closed</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary" id="searchBtn">Search</button>
-                    <button type="button" class="btn btn-primary" id="refresh">Refresh</button>
-                    <button type="button" class="btn btn-secondary" id="clear">Clear</button>
-
-                </form>
-                <div class="float-right">
-                    <button type="button" class="btn btn-link" id="delete">Delete all data from Redis</button>
+            <div class="form-row">
+                <div class="col form-group">
+                    <label for="product">Product:</label>
+                    <input type="text" class="form-control" id="product" name="product">
                 </div>
-         </div>
-            <div class="row">
-                <table class="table table-striped" id="allCases">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Error code</th>
-                            <th>Provider</th>
-                            <th>Product</th>
-                            <th>Number of open support cases</th>
-                            <th>List of all support cases</th>
-                        </tr>
-                    </thead>
 
-                    <tbody></tbody>
-                </table>
+                <div class="col form-group">
+                    <label for="provider">Provider:</label>
+                    <input type="text" class="form-control" id="provider" name="provider">
+                </div>
             </div>
+
+            <div class="form-row">
+                <div class="col form-group">
+                    <label for="errorCode">Error code:</label>
+                    <input type="text" class="form-control" id="errorCode" name="errorCode">
+                </div>
+
+                <div class="col form-group">
+                    <label for="customerId">Customer ID:</label>
+                    <input type="text" class="form-control" id="customerId" name="customerId">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="col form-group">
+                    <label for="fromCreationDate">Creation date from</label>
+                    <input class="form-control" type="date" id="fromCreationDate" name="fromCreationDate">
+                </div>
+                <div class="col form-group">
+                    <label for="untilCreationDate">Until</label>
+                    <input class="form-control" type="date" id="untilCreationDate" name="untilCreationDate">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="col form-group">
+                    <label for="fromLastModifiedDate">Last modified date from</label>
+                    <input class="form-control" type="date" id="fromLastModifiedDate" name="fromLastModifiedDate">
+                </div>
+                <div class="col form-group">
+                    <label for="untilLastModifiedDate">Until</label>
+                    <input class="form-control" type="date" id="untilLastModifiedDate" name="untilLastModifiedDate">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="col form-group">
+                    <label for="status">Status</label>
+                    <select id="status" class="form-control" name="status">
+                        <option value="" selected>Choose...</option>
+                        <option>Open</option>
+                        <option>Closed</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="searchBtn">Search</button>
+            <button type="button" class="btn btn-primary" id="refresh">Refresh</button>
+            <button type="button" class="btn btn-secondary" id="clear">Clear</button>
+
+        </form>
+        <div class="float-right">
+            <button type="button" class="btn btn-link" id="delete">Delete all data from Redis</button>
         </div>
-    </body>
+    </div>
+    <div class="row">
+        <table class="table table-striped" id="allCases">
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>Error code</th>
+                <th>Provider</th>
+                <th>Product</th>
+                <th>Number of open support cases</th>
+                <th>List of all support cases</th>
+            </tr>
+            </thead>
+
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+</body>
 </html>
