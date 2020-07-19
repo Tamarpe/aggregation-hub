@@ -79,16 +79,21 @@
                             </select>
                         </div>
                     </div>
+
                     <button type="submit" class="btn btn-primary" id="searchBtn">Search</button>
                     <button type="button" class="btn btn-primary" id="refresh">Refresh</button>
-                    <button type="button" class="btn btn-secondary" id="delete">Delete</button>
                     <button type="button" class="btn btn-secondary" id="clear">Clear</button>
+
                 </form>
+                <div class="float-right">
+                    <button type="button" class="btn btn-link" id="delete">Delete all data from Redis</button>
+                </div>
          </div>
             <div class="row">
                 <table class="table table-striped" id="allCases">
                     <thead>
                         <tr>
+                            <th>#</th>
                             <th>Error code</th>
                             <th>Provider</th>
                             <th>Product</th>

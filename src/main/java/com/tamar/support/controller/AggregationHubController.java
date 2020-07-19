@@ -153,7 +153,7 @@ public class AggregationHubController {
 	 *
 	 * @return the response entity status.
 	 */
-	@RequestMapping(value = "/refresh")
+	@RequestMapping(value = "/refresh", method = RequestMethod.GET)
 	public ResponseEntity<String> refresh() {
 		redisRepository.refresh();
 		return new ResponseEntity<>(HttpStatus.OK);
@@ -164,7 +164,7 @@ public class AggregationHubController {
 	 *
 	 * @return the response entity status.
 	 */
-	@RequestMapping(value = "/delete")
+	@RequestMapping(value = "/delete", method = RequestMethod.GET)
 	public ResponseEntity<String> delete() {
 		redisRepository.delete();
 		return new ResponseEntity<>(HttpStatus.OK);

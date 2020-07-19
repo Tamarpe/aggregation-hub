@@ -11,7 +11,7 @@ function tr(text) {
 /**
  * Create HTML table cell.
  *
- * @param {String} text The content to be placed inside the cell.
+ * @param {String|Number} text The content to be placed inside the cell.
  * @return {String} The content inside td tags.
  */
 function td(text) {
@@ -21,6 +21,7 @@ function td(text) {
 /**
  * Create HTML table row.
  *
+ * @param {Integer} rowId The row ID.
  * @param {String} errorCode The error code of the row.
  * @param {String} provider The provider of the row.
  * @param {String} products The products of the row.
@@ -28,9 +29,10 @@ function td(text) {
  * @param {String} supportCases All supported cases.
  * @return {String} The data inside a row.
  */
-function row(errorCode, provider, products, supportOpenCasesCnt, supportCases) {
+function row(rowId, errorCode, provider, products, supportOpenCasesCnt, supportCases) {
     return $(
         tr(
+            td(rowId) +
             td(errorCode) +
             td(provider) +
             td(products) +
@@ -44,8 +46,6 @@ function row(errorCode, provider, products, supportOpenCasesCnt, supportCases) {
  */
 function refreshTable() {
     let params = $('#searchCases').serialize();
-
-    console.log(params);
     let url = '/search?' + params;
 
     $.get(url, function(data) {
@@ -64,13 +64,13 @@ function refreshTable() {
                 if ((groups[i][j].status).toLowerCase() === 'open') {
                     supportOpenCasesCnt++;
                 }
-                let supportCase = ['ID: ' + groups[i][j].caseId, 'Status: ' + groups[i][j].status, 'Resource: ' + groups[i][j].resourceName];
-                supportCase.push('</br> Creation Date: ' + groups[i][j].creationDate);
-                supportCase.push('lastModified Date: ' + groups[i][j].lastModifiedDate);
+                let supportCase = ['<b>ID: ' + groups[i][j].caseId + '</b>', 'Status: ' + groups[i][j].status, 'Resource: ' + groups[i][j].resourceName];
+                supportCase.push('</br> Created: ' + groups[i][j].creationDate);
+                supportCase.push('Last modified: ' + groups[i][j].lastModifiedDate);
                 supportCases.push(supportCase.join(', '));
                 products.push(groups[i][j].productName);
             }
-            mainTable.append(row(groups[i][0].errorCode, groups[i][0].provider, products.join(', '), supportOpenCasesCnt, supportCases.join('</br>')));
+            mainTable.append(row(i + 1, groups[i][0].errorCode, groups[i][0].provider, products.join(', '), supportOpenCasesCnt, supportCases.join('</br>')));
         }
     });
 }
@@ -131,6 +131,7 @@ $(document).ready(function() {
         $("#searchCases input").each(function() {
             this.value = '';
         })
+        $('#status').val('');
         refreshTable();
     });
 
