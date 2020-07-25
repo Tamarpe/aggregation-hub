@@ -73,26 +73,26 @@ public class AggregationHubController {
       Map<String, Object> map = new HashMap<String, Object>();
       Case caseObj = (Case) entry.getValue();
 
-      if (product != null && !product.equals("") && !caseObj.getProductName().toLowerCase().contains(product.toLowerCase())) {
+      if (!isInputEmpty(product) && !caseObj.getProductName().toLowerCase().contains(product.toLowerCase())) {
         continue;
       }
-      if (provider != null && !provider.equals("") && isParsable(provider)
+      if (!isInputEmpty(provider) && isParsable(provider)
         && Integer.parseInt(provider) != caseObj.getProvider()) {
         continue;
       }
-      if (errorCode != null && !errorCode.equals("") && isParsable(errorCode)
+      if (!isInputEmpty(errorCode) && isParsable(errorCode)
         && Integer.parseInt(errorCode) != caseObj.getErrorCode()) {
         continue;
       }
-      if (customerId != null && !customerId.equals("") && isParsable(customerId)
+      if (!isInputEmpty(customerId) && isParsable(customerId)
         && Integer.parseInt(customerId) != caseObj.getCustomerId()) {
         continue;
       }
-      if (status != null && !status.equals("") && !status.equalsIgnoreCase(caseObj.getStatus())) {
+      if (!isInputEmpty(status) && !status.equalsIgnoreCase(caseObj.getStatus())) {
         continue;
       }
 
-      if (fromCreationDate != null && !fromCreationDate.equals("")) {
+      if (!isInputEmpty(fromCreationDate)) {
         try {
           Date parsed = inputDateFormat.parse(fromCreationDate);
           if (parsed.compareTo(caseObj.getCreationDate()) > 0) {
@@ -103,7 +103,7 @@ public class AggregationHubController {
         }
       }
 
-      if (fromLastModifiedDate != null && !fromLastModifiedDate.equals("")) {
+      if (!isInputEmpty(fromLastModifiedDate)) {
         try {
           Date parsed = inputDateFormat.parse(fromLastModifiedDate);
           if (parsed.compareTo(caseObj.getLastModifiedDate()) > 0) {
@@ -114,7 +114,7 @@ public class AggregationHubController {
         }
 
       }
-      if (untilCreationDate != null && !untilCreationDate.equals("")) {
+      if (!isInputEmpty(untilCreationDate)) {
         try {
           Date parsed = inputDateFormat.parse(untilCreationDate);
           if (caseObj.getCreationDate().compareTo(parsed) > 0) {
@@ -125,8 +125,7 @@ public class AggregationHubController {
         }
 
       }
-
-      if (untilLastModifiedDate != null && !untilLastModifiedDate.equals("")) {
+      if (!isInputEmpty(untilLastModifiedDate)) {
         try {
           Date parsed = inputDateFormat.parse(untilLastModifiedDate);
           if (caseObj.getLastModifiedDate().compareTo(parsed) > 0) {
@@ -188,6 +187,19 @@ public class AggregationHubController {
     } catch (final NumberFormatException e) {
       return false;
     }
+  }
+
+  /**
+   * Helper function to check it an input is empty.
+   *
+   * @param input the given input from the user.
+   * @return true if is empty, false otherwise.
+   */
+  public static boolean isInputEmpty(String input) {
+    if (input != null && !input.equals("")) {
+      return false;
+    }
+    return true;
   }
 
 }

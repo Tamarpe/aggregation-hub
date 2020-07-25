@@ -5,11 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
-    <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+    <script th:src="@{/webjars/vue/vue.min.js}"></script>
+    <script th:src="@{/webjars/axios/dist/axios.min.js}"></script>
     <script th:src="@{/webjars/popper.js/umd/popper.min.js}"></script>
     <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
-    <script th:src="@{/webjars/jquery-validation/jquery.validate.js}"></script>
-    <script src="main.js"></script>
+    <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
+    <script th:src="@{/webjars/vuelidate/dist/vuelidate.min.js}"></script>
+    <script th:src="@{/webjars/vuelidate/dist/validators.min.js}"></script>
+    <script type="module" src="js/main.js"></script>
 </head>
 
 <body>
@@ -19,60 +23,67 @@
     </div>
 </div>
 
-<div class="container">
+<div class="container" id="main">
     <div class="pb-5">
         <form id="searchCases" name="searchCases" method="get">
-
             <div class="form-row">
                 <div class="col form-group">
                     <label for="product">Product:</label>
-                    <input type="text" class="form-control" id="product" name="product">
+                    <input v-model="userFilters.product" type="text" class="form-control" id="product" name="product">
                 </div>
 
                 <div class="col form-group">
                     <label for="provider">Provider:</label>
-                    <input type="text" class="form-control" id="provider" name="provider">
+                    <input type="text" class="form-control" @blur='checkIsValid($v.userFilters.provider, $event)' id="provider" v-model="userFilters.provider" v-on:input="$v.userFilters.provider.$touch" v-bind:class="{error: $v.userFilters.provider.$error, valid: $v.userFilters.provider.$dirty && !$v.userFilters.provider.$invalid}"/>
+                    <div class="errorMsg" v-if="!$v.userFilters.provider.numeric">Provider must be a number.</div>
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="col form-group">
                     <label for="errorCode">Error code:</label>
-                    <input type="text" class="form-control" id="errorCode" name="errorCode">
+                    <input type="text" class="form-control" @blur='checkIsValid($v.userFilters.errorCode, $event)' id="errorCode" v-model="userFilters.errorCode" v-on:input="$v.userFilters.errorCode.$touch" v-bind:class="{error: $v.userFilters.errorCode.$error, valid: $v.userFilters.errorCode.$dirty && !$v.userFilters.errorCode.$invalid}"/>
+                    <div class="errorMsg" v-if="!$v.userFilters.errorCode.numeric">Error code must be a number.</div>
+
                 </div>
 
                 <div class="col form-group">
                     <label for="customerId">Customer ID:</label>
-                    <input type="text" class="form-control" id="customerId" name="customerId">
+                    <input type="text" class="form-control" @blur='checkIsValid($v.userFilters.customerId, $event)' id="customerId" v-model="userFilters.customerId" v-on:input="$v.userFilters.customerId.$touch" v-bind:class="{error: $v.userFilters.customerId.$error, valid: $v.userFilters.customerId.$dirty && !$v.userFilters.customerId.$invalid}"/>
+                    <div class="errorMsg" v-if="!$v.userFilters.customerId.numeric">Customer ID must be a number.</div>
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="col form-group">
                     <label for="fromCreationDate">Creation date from</label>
-                    <input class="form-control" type="date" id="fromCreationDate" name="fromCreationDate">
+                    <input v-model="userFilters.fromCreationDate" class="form-control" type="date" id="fromCreationDate"
+                           name="fromCreationDate">
                 </div>
                 <div class="col form-group">
                     <label for="untilCreationDate">Until</label>
-                    <input class="form-control" type="date" id="untilCreationDate" name="untilCreationDate">
+                    <input v-model="userFilters.untilCreationDate" class="form-control" type="date"
+                           id="untilCreationDate" name="untilCreationDate">
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="col form-group">
                     <label for="fromLastModifiedDate">Last modified date from</label>
-                    <input class="form-control" type="date" id="fromLastModifiedDate" name="fromLastModifiedDate">
+                    <input v-model="userFilters.fromLastModifiedDate" class="form-control" type="date"
+                           id="fromLastModifiedDate" name="fromLastModifiedDate">
                 </div>
                 <div class="col form-group">
                     <label for="untilLastModifiedDate">Until</label>
-                    <input class="form-control" type="date" id="untilLastModifiedDate" name="untilLastModifiedDate">
+                    <input v-model="userFilters.untilLastModifiedDate" class="form-control" type="date"
+                           id="untilLastModifiedDate" name="untilLastModifiedDate">
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="col form-group">
                     <label for="status">Status</label>
-                    <select id="status" class="form-control" name="status">
+                    <select v-model="userFilters.status" id="status" class="form-control" name="status">
                         <option value="" selected>Choose...</option>
                         <option>Open</option>
                         <option>Closed</option>
@@ -80,29 +91,47 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-primary" id="searchBtn">Search</button>
-            <button type="button" class="btn btn-primary" id="refresh">Refresh</button>
-            <button type="button" class="btn btn-secondary" id="clear">Clear</button>
-
+            <button type="submit" class="btn btn-primary" id="searchBtn" @click="searchBtn">Search</button>
+            <button type="button" class="btn btn-primary" id="refresh" @click="refresh">Refresh</button>
+            <button type="button" class="btn btn-secondary" id="clear" @click="clearBtn">Clear</button>
         </form>
+
+        <template v-if="loading">
+            <div class="d-flex justify-content-center">
+                <div class="spinner-border" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+            </div>
+        </template>
+
         <div class="float-right">
-            <button type="button" class="btn btn-link" id="delete">Delete all data from Redis</button>
+            <button type="button" class="btn btn-link" id="delete" @click="deleteData">Delete all data from Redis</button>
         </div>
     </div>
-    <div class="row">
-        <table class="table table-striped" id="allCases">
+
+    <div class="row" id="cases-table">
+        <table class="table table-striped">
             <thead>
             <tr>
-                <th>#</th>
-                <th>Error code</th>
-                <th>Provider</th>
-                <th>Product</th>
-                <th>Number of open support cases</th>
-                <th>List of all support cases</th>
+                <th v-for="colHeader of columns">
+                    {{ colHeader }}
+                </th>
             </tr>
             </thead>
 
-            <tbody></tbody>
+            <tbody>
+                <tr v-for="(caseObj, key, index) in cases">
+                    <td> {{key + 1}}</td>
+                    <td> {{ caseObj.caseId }}</td>
+                    <td> {{ caseObj.errorCode }}</td>
+                    <td> {{ caseObj.provider }}</td>
+                    <td> {{ caseObj.productName }}</td>
+                    <td> {{ caseObj.creationDate }}</td>
+                    <td> {{ caseObj.lastModifiedDate }}</td>
+                    <td> {{ caseObj.status }}</td>
+                    <td> {{ caseObj.resourceName }}</td>
+                </tr>
+            </tbody>
         </table>
     </div>
 </div>
