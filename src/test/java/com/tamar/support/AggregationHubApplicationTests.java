@@ -67,7 +67,7 @@ class AggregationHubApplicationTests {
 		allMockedCases.put(mockCase.getId(), mockCase);
 		ArrayList<Map<String, Object>> result = parseCaseAsResult(mockCase);
 
-		when(RedisRepository.findAllCases()).thenReturn(allMockedCases);
+		when(RedisRepository.getAllEntries("case")).thenReturn(allMockedCases);
 
 		assertEquals(result, aggregationHubController.searchCases(null, null,null,null,null,null,null,null,null));
 	}
@@ -85,7 +85,7 @@ class AggregationHubApplicationTests {
 		allMockedCases.put(mockCase2.getId(), mockCase2);
 
 		ArrayList<Map<String, Object>> result = parseCaseAsResult(mockCase2);
-		when(RedisRepository.findAllCases()).thenReturn(allMockedCases);
+		when(RedisRepository.getAllEntries("case")).thenReturn(allMockedCases);
 
 		assertEquals(result, aggregationHubController.searchCases("Test Product 2", null,null,null,null,null,null,null,null));
 	}
@@ -107,7 +107,7 @@ class AggregationHubApplicationTests {
 		ArrayList<Map<String, Object>> result = parseCaseAsResult(mockCase);
 		ArrayList<Map<String, Object>> result2 = parseCaseAsResult(mockCase2);
 
-		when(RedisRepository.findAllCases()).thenReturn(allMockedCases);
+		when(RedisRepository.getAllEntries("case")).thenReturn(allMockedCases);
 
 		assertEquals(result, aggregationHubController.searchCases(null, null,null,null,"2020-10-21","2020-10-22",null,null,null));
 		assertEquals(result2, aggregationHubController.searchCases(null, null,null,null, null,null,"2020-12-26","2020-12-26", null));
@@ -120,7 +120,7 @@ class AggregationHubApplicationTests {
 			new Date(), new Date(), "Test Product", "Test");
 
 		allMockedCases.put(mockCase.getId(), mockCase);
-		when(RedisRepository.findAllCases()).thenReturn(allMockedCases);
+		when(RedisRepository.getAllEntries("case")).thenReturn(allMockedCases);
 
 		assertEquals(0, aggregationHubController.searchCases("Some text", null,null,null,null,null,null,null, null).size());
 	}
@@ -134,7 +134,7 @@ class AggregationHubApplicationTests {
 		allMockedCases.put(mockCase.getId(), mockCase);
 
 		ArrayList<Map<String, Object>> result = parseCaseAsResult(mockCase);
-		when(RedisRepository.findAllCases()).thenReturn(allMockedCases);
+		when(RedisRepository.getAllEntries("case")).thenReturn(allMockedCases);
 
 		assertEquals(result, aggregationHubController.searchCases("Test Product", "42","101","11234",null,null,null,null,"Open"));
 	}
@@ -154,12 +154,6 @@ class AggregationHubApplicationTests {
 				assertEquals(HttpStatus.OK,
 					res.getStatusCode());
 		}
-	}
-
-	@Test
-	public void refreshTimeLimit() {
-		when(RedisRepository.getLastExecutionResource(anyInt())).thenReturn(new Date());
-		assertEquals(false, RedisRepository.refresh());
 	}
 
 	/**

@@ -40,7 +40,9 @@ window.addEventListener("load", function (event) {
             },
             searchBtn: function (e) {
                 e.preventDefault();
-                this.fetchData();
+                if (!this.$v.$invalid) {
+                    this.fetchData();
+                }
             },
             clearBtn: function (event) {
                 this.userFilters.product = '';
@@ -58,18 +60,12 @@ window.addEventListener("load", function (event) {
                 this.loading = true;
                 axios
                     .get('/refresh')
-                    .finally(() => {
-                        this.loading =  false
-                    });
                 this.fetchData();
             },
             deleteData: function (event) {
                 this.loading = true;
                 axios
                     .get('/delete')
-                    .finally(() => {
-                        this.loading =  false
-                    });
                 this.fetchData();
             },
             fetchData: function (e) {

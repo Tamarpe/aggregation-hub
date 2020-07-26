@@ -1,44 +1,48 @@
 package com.tamar.support.repository;
 
-import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 public interface RedisRepository {
 
   /**
-   * Return all found cases.
+   * Return all entries for a given key.
    *
-   * @return all the cases from Redis.
+   * @param key the given key.
+   * @return all entries.
    */
-  Map<Object, Object> findAllCases();
-
-  /**
-   * Refresh the fetched data.
-   *
-   * @return true if refresh is allowed, false otherwise.
-   */
-  boolean refresh();
+  Map<Object, Object> getAllEntries(String key);
 
   /**
    * Delete all the data from Redis.
+   *
+   * @param key the given key.
    */
-  void delete();
+  void delete(String key);
 
   /**
-   * Map and add a case to Redis.
+   * Check if an entry exists in Redis.
    *
-   * @param crmId     the CRM ID.
-   * @param crmName   the CRM Name.
-   * @param caseToAdd the case that should be mapped and added.
+   * @param key     the given key.
+   * @param hashKey the entry's hash key.
+   * @return if there is an entry with a given key and value in Redis.
    */
-  void mapAndAdd(int crmId, String crmName, LinkedHashMap caseToAdd);
+  Boolean exists(String key, Object hashKey);
 
   /**
-   * Return last execution of fetching data from a CRM.
+   * Get entry from Redis.
    *
-   * @param crmId the crm ID.
-   * @return the date of the last execution.
+   * @param key     the entry's key.
+   * @param hashKey the entry's hash key.
+   * @return the entry from Redis.
    */
-  Date getLastExecutionResource(int crmId);
+  Object get(String key, Object hashKey);
+
+  /**
+   * Add an entry to Redis.
+   *
+   * @param key      the entry's key.
+   * @param id       the ID of the entry.
+   * @param objToAdd the object that should be added.
+   */
+  void add(String key, Object id, Object objToAdd);
 }
